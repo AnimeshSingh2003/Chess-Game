@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#121212">
+  <title>ARChess Nexus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Montserrat:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+  <div id="app">
+
+    <!-- 1. Splash Screen -->
+    <section id="screen-splash" class="screen full-center active">
+      <div class="logo-container glow-pulse">
+        <ion-icon name="hardware-chip-outline" class="neon-icon lg"></ion-icon>
+        <h1 class="logo-text">ARChess Nexus</h1>
+      </div>
+      <div class="spinner-container">
+        <div class="cube-spinner">
+          <div class="cube-face front"></div>
+          <div class="cube-face back"></div>
+          <div class="cube-face right"></div>
+          <div class="cube-face left"></div>
+          <div class="cube-face top"></div>
+          <div class="cube-face bottom"></div>
+        </div>
+      </div>
+      <p class="loading-text neon-blue">Loading Reality...</p>
+      
+      <!-- Particles -->
+      <div id="particles"></div>
+    </section>
+
+    <!-- 2. Login / Welcome Screen -->
+    <section id="screen-login" class="screen full-center">
+      <div class="glass-card login-card" id="login-main-card">
+        <div class="logo-mini glow-pulse">
+           <ion-icon name="hardware-chip-outline" class="neon-icon"></ion-icon>
+        </div>
+        <h2>Welcome to ARChess</h2>
+        <div class="auth-buttons">
+          <button class="btn btn-outline" onclick="app.promptUsername()">
+            <ion-icon name="logo-google"></ion-icon> Login with Google
+          </button>
+          <button class="btn btn-outline" onclick="app.promptUsername()">
+            <ion-icon name="mail-outline"></ion-icon> Login with Email
+          </button>
+          <div class="divider"><span>OR</span></div>
+          <button class="btn btn-primary" onclick="app.promptUsername()">
+            Continue as Guest
+          </button>
+        </div>
+        <p class="small-text text-muted mt-2">By continuing, you agree to our Terms & Privacy.</p>
+      </div>
+
+      <!-- Username Prompt Card (Hidden initially) -->
+      <div class="glass-card login-card hidden" id="username-prompt-card" style="width: 320px;">
+        <h2>Choose Username</h2>
+        <p class="small-text text-muted" style="margin-bottom:15px;">Must be unique across the Nexus.</p>
+        <input type="text" id="username-input" placeholder="Enter username..." style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--glass-border); background:rgba(0,0,0,0.3); color:#fff; margin-bottom:15px; outline:none; font-family:var(--font-body);" autocomplete="off">
+        <button class="btn btn-primary full-width" onclick="app.submitUsername()">Confirm</button>
+        <button class="btn btn-outline full-width mt-1" onclick="app.cancelUsernamePrompt()">Back</button>
+      </div>
+    </section>
+
+    <!-- 3. Home Dashboard -->
+    <section id="screen-home" class="screen with-bottom-nav">
+      <header class="dashboard-header glass-header">
+        <div class="user-profile">
+          <div class="avatar online">
+            <img src="https://i.pravatar.cc/150?img=11" alt="Profile" onclick="app.openAvatarModal()" style="cursor: pointer" class="tooltip" data-tip="Change Avatar">
+          </div>
+          <div class="user-info">
+            <h3>PlayerOne</h3>
+            <span class="player-id" style="font-size: 0.75rem; color: var(--primary-blue); display: block; margin-bottom: 2px; letter-spacing: 1px;">#XXXXXX</span>
+          </div>
+        </div>
+        <button class="icon-btn" onclick="app.nav('settings')">
+          <ion-icon name="settings-outline"></ion-icon>
+        </button>
+      </header>
+
+      <main class="dashboard-content scrollable">
+        <div class="xp-bar-container glass-panel mt-1">
+          <div class="xp-header">
+            <span>Level 12</span>
+            <span>850 / 1000 XP</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 85%;"></div>
+          </div>
+        </div>
+
+        <h4 class="section-title mt-2">Quick Actions</h4>
+        <div class="action-grid">
+          <div class="action-card" onclick="app.nav('modes')">
+            <div class="icon-wrapper blue-glow">
+              <ion-icon name="play-outline"></ion-icon>
+            </div>
+            <span>Play Online</span>
+          </div>
+          <div class="action-card" onclick="app.nav('ai-game')">
+            <div class="icon-wrapper purple-glow">
+              <ion-icon name="hardware-chip-outline"></ion-icon>
+            </div>
+            <span>Play vs AI</span>
+          </div>
+          <div class="action-card ar-card highlight" onclick="app.nav('ar-mode')">
+            <div class="icon-wrapper cyan-glow pulse">
+              <ion-icon name="cube-outline"></ion-icon>
+            </div>
+            <span>AR Mode</span>
+            <div class="badge-new">HOT</div>
+          </div>
+          <div class="action-card" onclick="app.nav('puzzles')">
+            <div class="icon-wrapper green-glow">
+              <ion-icon name="extension-puzzle-outline"></ion-icon>
+            </div>
+            <span>Puzzles</span>
+          </div>
+          <div class="action-card" onclick="app.nav('learn')">
+            <div class="icon-wrapper yellow-glow">
+              <ion-icon name="book-outline"></ion-icon>
+            </div>
+            <span>Learn</span>
+          </div>
+        </div>
+
+        <h4 class="section-title mt-2">Recent Games</h4>
+        <div class="history-scroller">
+          <div class="history-card win">
+            <span class="result">W</span>
+            <div class="details">
+              <span>vs ChessMaster99</span>
+              <span class="timetext">Rapid • 10 min ago</span>
+            </div>
+          </div>
+          <div class="history-card loss">
+            <span class="result">L</span>
+            <div class="details">
+              <span>vs Anand_A</span>
+              <span class="timetext">Blitz • 2 hrs ago</span>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <nav class="bottom-nav glass-nav">
+        <div class="nav-item active" onclick="app.nav('home')">
+          <ion-icon name="home"></ion-icon>
+          <span>Home</span>
+        </div>
+        <div class="nav-item" onclick="app.nav('modes')">
+          <ion-icon name="game-controller-outline"></ion-icon>
+          <span>Play</span>
+        </div>
+        <div class="nav-item ar-btn" onclick="app.nav('ar-mode')">
+          <div class="ar-wrapper">
+             <ion-icon name="cube-outline"></ion-icon>
+          </div>
+        </div>
+        <div class="nav-item" onclick="app.nav('profile')">
+          <ion-icon name="person-outline"></ion-icon>
+          <span>Profile</span>
+        </div>
+      </nav>
+    </section>
+
+    <!-- 4. Game Mode Selection -->
+    <section id="screen-modes" class="screen with-bottom-nav">
+      <header class="top-bar">
+        <button class="icon-btn" onclick="app.nav('home')">
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </button>
+        <h2>Select Mode</h2>
+        <button class="icon-btn" onclick="app.nav('settings')">
+          <ion-icon name="settings-outline"></ion-icon>
+        </button>
+      </header>
+      
+      <main class="scrollable center-listed">
+        <div class="glass-panel list-group">
+          <h3 class="panel-title">Standard Time Controls</h3>
+          <button class="list-btn" onclick="app.nav('standard-game')">
+             <ion-icon name="flash-outline" class="yellow-icon"></ion-icon>
+             <div class="btn-text">
+               <span class="title">Blitz</span>
+               <span class="sub">3 min</span>
+             </div>
+          </button>
+          <button class="list-btn" onclick="app.nav('standard-game')">
+             <ion-icon name="stopwatch-outline" class="blue-icon"></ion-icon>
+             <div class="btn-text">
+               <span class="title">Rapid</span>
+               <span class="sub">10 min</span>
+             </div>
+          </button>
+          <button class="list-btn" onclick="app.nav('standard-game')">
+             <ion-icon name="hourglass-outline" class="green-icon"></ion-icon>
+             <div class="btn-text">
+               <span class="title">Classical</span>
+               <span class="sub">30 min</span>
+             </div>
+          </button>
+        </div>
+
+        <div class="glass-panel mt-2 list-group">
+          <button class="list-btn v-center" onclick="app.showToast('Custom Match setup pending')">
+             <div class="btn-text">
+               <span class="title">Custom Game</span>
+               <span class="sub">Set time & increment</span>
+             </div>
+             <ion-icon name="options-outline"></ion-icon>
+          </button>
+        </div>
+
+        <div class="glass-panel mt-2 list-group">
+          <button class="list-btn" onclick="app.showToast('Room Code generated: XR8B9K')">
+             <ion-icon name="people-outline" class="purple-icon"></ion-icon>
+             <div class="btn-text">
+               <span class="title">Play with Friend</span>
+               <span class="sub">Create Room Code</span>
+             </div>
+          </button>
+        </div>
+      </main>
+    </section>
+
+    <!-- 5. Standard Chess Gameplay -->
+    <section id="screen-standard-game" class="screen gameplay-screen">
+      <header class="game-header">
+         <button class="icon-btn" onclick="app.nav('home')"><ion-icon name="arrow-back"></ion-icon></button>
+         <div class="opponent-info glass-pill">
+            <img src="https://i.pravatar.cc/150?img=33" alt="Opponent">
+            <div class="meta">
+              <span class="name">GrandmasterX</span>
+              <span class="timer danger">02:45</span>
+            </div>
+         </div>
+         <button class="icon-btn" onclick="app.nav('settings')"><ion-icon name="settings-outline"></ion-icon></button>
+      </header>
+
+      <div class="board-container holographic">
+         <div id="standard-chessboard" class="chessboard 2d-board">
+            <!-- Dynamically generated script.js -->
+         </div>
+      </div>
+
+      <footer class="game-footer">
+         <div class="player-info glass-pill self">
+            <img src="https://i.pravatar.cc/150?img=11" alt="Self" onclick="app.openAvatarModal()" style="cursor: pointer" class="tooltip" data-tip="Change Avatar">
+            <div class="meta">
+              <span class="name">PlayerOne</span>
+              <span class="player-id" style="font-size: 0.7rem; color: var(--primary-blue); display: block; margin-bottom: 2px; letter-spacing: 1px;">#XXXXXX</span>
+              <span class="timer">03:12</span>
+            </div>
+         </div>
+         <div class="game-controls glass-panel">
+            <button class="icon-btn tooltip" data-tip="Undo" onclick="app.showToast('Move Undone')"><ion-icon name="arrow-undo-outline"></ion-icon></button>
+            <button class="icon-btn tooltip" data-tip="Hint" onclick="app.showToast('Hint: Develop your Knight')"><ion-icon name="bulb-outline"></ion-icon></button>
+            <button class="icon-btn tooltip" data-tip="Analyze" onclick="app.showToast('Engine eval: +0.3')"><ion-icon name="analytics-outline"></ion-icon></button>
+            <button class="icon-btn tooltip" data-tip="Menu" onclick="app.showToast('Options Menu')"><ion-icon name="ellipsis-horizontal-outline"></ion-icon></button>
+         </div>
+      </footer>
+    </section>
+    
+    <!-- 6. AI Game Screen (Similar but side panel added) -->
+    <section id="screen-ai-game" class="screen gameplay-screen ai-mode">
+      <header class="game-header">
+         <button class="icon-btn" onclick="app.nav('home')"><ion-icon name="arrow-back"></ion-icon></button>
+         <div class="ai-difficulty glass-pill">
+            <ion-icon name="hardware-chip" class="blue-icon"></ion-icon>
+            <span>Medium AI (1500)</span>
+         </div>
+         <button class="icon-btn" onclick="app.nav('settings')"><ion-icon name="settings-outline"></ion-icon></button>
+      </header>
+
+      <div class="ai-layout">
+         <!-- Left Side: Evaluation -->
+         <div class="eval-bar-container glass-panel">
+           <div class="eval-fill" style="height: 55%;"></div>
+           <span class="eval-text">+0.5</span>
+         </div>
+         
+         <!-- Center: Board -->
+         <div class="board-container holographic">
+           <div id="ai-chessboard" class="chessboard 2d-board"></div>
+         </div>
+
+         <!-- Right/Bottom Side Panel: Suggestions -->
+         <div class="ai-suggestions glass-panel">
+           <div class="suggestionbox">
+             <span class="label">Suggested</span>
+             <span class="move neon-blue">e4</span>
+           </div>
+         </div>
+      </div>
+
+      <footer class="game-footer">
+        <div class="player-info glass-pill self">
+            <img src="https://i.pravatar.cc/150?img=11" alt="Self" onclick="app.openAvatarModal()" style="cursor: pointer" class="tooltip" data-tip="Change Avatar">
+            <div class="meta">
+              <span class="name">PlayerOne</span>
+              <span class="player-id" style="font-size: 0.7rem; color: var(--primary-blue); display: block; margin-bottom: 2px; letter-spacing: 1px;">#XXXXXX</span>
+              <span class="timer">∞</span>
+            </div>
+         </div>
+      </footer>
+    </section>
+
+    <!-- 7. AR Mode Screen -->
+    <section id="screen-ar-mode" class="screen ar-screen">
+      <!-- WebXR A-Frame Scene -->
+      <div id="ar-scene-layer" style="position: absolute; inset: 0; z-index: -1;">
+        <a-scene embedded vr-mode-ui="enabled: false"
+                 webxr="optionalFeatures: hit-test, dom-overlay; overlayElement: #screen-ar-mode">
+          
+          <a-entity id="ar-reticle" visible="false" ar-hit-test="target:#ar-board-root; type:footprint" reticle-listener>
+             <a-ring rotation="-90 0 0" radius-inner="0.05" radius-outer="0.08" color="#00BFFF"></a-ring>
+          </a-entity>
+          
+          <a-entity id="ar-board-root" visible="false"></a-entity>
+          
+          <a-entity camera position="0 0 0">
+             <a-entity cursor="rayOrigin: mouse;" raycaster="objects: .clickable;"></a-entity>
+          </a-entity>
+        </a-scene>
+      </div>
+
+      <header class="ar-overlay-top glass-header clear-glass">
+        <button class="icon-btn" onclick="app.nav('home')"><ion-icon name="chevron-back"></ion-icon></button>
+        <span class="ar-title glow-text">AR Reality</span>
+        <button class="icon-btn" onclick="app.nav('settings')"><ion-icon name="options"></ion-icon></button>
+      </header>
+      
+      <!-- AR Interactive Elements -->
+      <div class="ar-center-stage" style="pointer-events:none;">
+         <span class="scan-text glow-pulse" id="ar-scan-text">Looking for flat surface...</span>
+      </div>
+
+      <!-- AR Analysis Overlay -->
+      <div class="ar-analysis-popup glass-panel hidden" id="ar-analysis-popup">
+        <div class="eval-head">
+          <span class="title">Evaluation</span>
+          <span class="score success">+1.2</span>
+        </div>
+        <div class="eval-body">
+          <div><span class="label">Best Move:</span> <span class="val">Nf3</span></div>
+          <div><span class="label">Threat:</span> <span class="val warning">Queen Attack</span></div>
+        </div>
+      </div>
+
+      <div class="ar-floating-buttons side-panel">
+        <button class="glass-btn circle" onclick="app.showToast('Hint: Move to e4')"><ion-icon name="bulb"></ion-icon></button>
+        <button class="glass-btn circle" onclick="app.toggleARAnalysis()"><ion-icon name="analytics"></ion-icon></button>
+        <button class="glass-btn circle" onclick="app.showToast('3D Avatar Overlay Toggled')"><ion-icon name="body"></ion-icon></button>
+      </div>
+
+      <footer class="ar-overlay-bottom">
+        <div class="ar-controls glass-panel">
+          <button class="btn btn-outline small" onclick="app.scanSurface()">Scan</button>
+          <button class="btn btn-primary small glow" id="btn-place-board" onclick="app.placeARBoard()" disabled>Place</button>
+          <button class="btn btn-outline small" onclick="app.resetAR()">Reset</button>
+        </div>
+      </footer>
+    </section>
+
+    <!-- 8. Profile Screen -->
+    <section id="screen-profile" class="screen with-bottom-nav">
+      <header class="top-bar">
+        <button class="icon-btn" onclick="app.nav('home')"><ion-icon name="chevron-back-outline"></ion-icon></button>
+        <h2>Player Profile</h2>
+        <div style="display: flex; gap: 10px;">
+          <button class="icon-btn" onclick="app.showToast('Share Code Copied!')"><ion-icon name="share-social-outline"></ion-icon></button>
+          <button class="icon-btn" onclick="app.nav('settings')"><ion-icon name="settings-outline"></ion-icon></button>
+        </div>
+      </header>
+
+      <main class="scrollable">
+        <div class="profile-header">
+           <img src="https://i.pravatar.cc/150?img=11" alt="Avatar" class="profile-avatar large neon-border" onclick="app.openAvatarModal()" style="cursor: pointer" class="tooltip" data-tip="Change Avatar">
+           <h3>PlayerOne</h3>
+           <span class="player-id" style="font-size: 0.9rem; color: var(--primary-blue); display: block; margin-bottom: 5px; letter-spacing: 1px; font-weight:bold;">#XXXXXX</span>
+           <p class="tag">@player_one_ar</p>
+        </div>
+
+        <div class="stats-row glass-panel mt-2">
+           <div class="stat-box">
+             <span class="val success">120</span>
+             <span class="lbl">Wins</span>
+           </div>
+           <div class="stat-box">
+             <span class="val danger">84</span>
+             <span class="lbl">Loss</span>
+           </div>
+           <div class="stat-box">
+             <span class="val warning">15</span>
+             <span class="lbl">Draws</span>
+           </div>
+        </div>
+
+        <div class="glass-panel mt-2">
+           <h4 class="panel-title">Achievements</h4>
+           <div class="achievements-list">
+             <div class="badge gold tooltip" data-tip="Grandmaster"><ion-icon name="trophy"></ion-icon></div>
+             <div class="badge silver tooltip" data-tip="Fast Pace"><ion-icon name="flash"></ion-icon></div>
+             <div class="badge bronze tooltip" data-tip="AR Pioneer"><ion-icon name="cube"></ion-icon></div>
+           </div>
+        </div>
+      </main>
+    </section>
+
+    <!-- 9. Puzzle Screen -->
+    <section id="screen-puzzles" class="screen with-bottom-nav">
+       <header class="top-bar">
+         <button class="icon-btn" onclick="app.nav('home')"><ion-icon name="chevron-back"></ion-icon></button>
+         <div style="text-align:center;">
+           <h2 style="margin-bottom: 2px;">Puzzle #245</h2>
+           <div class="score-badge" style="font-size:0.75rem; color:var(--primary-blue);">Rating: 1550</div>
+         </div>
+         <button class="icon-btn" onclick="app.nav('settings')"><ion-icon name="settings-outline"></ion-icon></button>
+       </header>
+
+       <main class="puzzle-main full-center">
+         <h4 class="puzzle-instruction">White to move and win</h4>
+         <div class="board-container">
+           <div id="puzzle-chessboard" class="chessboard 2d-board"></div>
+         </div>
+         
+         <div class="puzzle-actions glass-panel mt-2">
+           <button class="btn btn-outline" onclick="app.showToast('Hint: Sacrifice the Rook!')"><ion-icon name="bulb-outline"></ion-icon> Hint</button>
+           <button class="btn btn-outline warning" onclick="app.showToast('Skipping to next puzzle...')"><ion-icon name="play-forward-outline"></ion-icon> Skip</button>
+           <button class="btn btn-primary" onclick="app.showToast('Correct! Rating +15')"><ion-icon name="checkmark-circle-outline"></ion-icon> Check Solution</button>
+         </div>
+       </main>
+    </section>
+
+    <!-- 10. Learning Screen -->
+    <section id="screen-learn" class="screen with-bottom-nav">
+       <header class="top-bar">
+         <button class="icon-btn" onclick="app.nav('home')"><ion-icon name="chevron-back"></ion-icon></button>
+         <h2>Chess Academy</h2>
+         <button class="icon-btn" onclick="app.nav('settings')">
+          <ion-icon name="settings-outline"></ion-icon>
+        </button>
+       </header>
+
+       <main class="scrollable">
+         <div class="category-tabs">
+           <div class="tab active">Basics</div>
+           <div class="tab">Openings</div>
+           <div class="tab">Tactics</div>
+           <div class="tab">Endgame</div>
+         </div>
+
+         <div class="lesson-list mt-2">
+           <div class="lesson-card glass-panel">
+             <div class="lesson-hero forks">
+               <ion-icon name="git-branch-outline"></ion-icon>
+             </div>
+             <div class="lesson-info">
+               <h3>Fork Tactics</h3>
+               <p>Learn how to attack multiple pieces simultaneously.</p>
+               <button class="btn btn-primary small mt-1" onclick="app.showToast('Starting Lesson: Fork Tactics')">Start Lesson</button>
+             </div>
+           </div>
+           
+           <div class="lesson-card glass-panel mt-1">
+             <div class="lesson-hero pins">
+               <ion-icon name="locate-outline"></ion-icon>
+             </div>
+             <div class="lesson-info">
+               <h3>Pinning Pieces</h3>
+               <p>Immobilize the opponent's valuable pieces.</p>
+               <button class="btn btn-primary small mt-1" onclick="app.showToast('Starting Lesson: Fork Tactics')">Start Lesson</button>
+             </div>
+           </div>
+         </div>
+       </main>
+    </section>
+
+    <!-- 11. Settings Screen -->
+    <section id="screen-settings" class="screen">
+       <header class="top-bar">
+         <button class="icon-btn" onclick="app.nav('home')"><ion-icon name="chevron-back"></ion-icon></button>
+         <h2>Settings</h2>
+         <button class="icon-btn" onclick="app.nav('settings')">
+          <ion-icon name="settings-outline"></ion-icon>
+        </button>
+       </header>
+
+       <main class="scrollable">
+         <div class="glass-panel mt-1 list-group">
+           <h3 class="panel-title">General</h3>
+           <div class="setting-item">
+             <span>Sound Effects</span>
+             <label class="toggle"><input type="checkbox" checked><span class="slider"></span></label>
+           </div>
+           <div class="setting-item">
+             <span>Dark Mode</span>
+             <label class="toggle"><input type="checkbox" id="dark-mode-toggle" checked><span class="slider"></span></label>
+           </div>
+           <div class="setting-item">
+             <span>Board Theme</span>
+             <select class="glass-select" id="board-theme-select">
+               <option value="neon-cyber">Neon Cyber</option>
+               <option value="classic-wood">Classic Wood</option>
+               <option value="glass">Glass</option>
+               <option value="midnight">Midnight</option>
+               <option value="emerald">Emerald</option>
+               <option value="ocean">Ocean</option>
+               <option value="crimson">Crimson</option>
+               <option value="minimalist">Minimalist</option>
+             </select>
+           </div>
+         </div>
+
+         <div class="glass-panel mt-2 list-group">
+           <h3 class="panel-title ar-glow">AR Settings</h3>
+           <div class="setting-item">
+             <span>Planes Sensitivity</span>
+             <input type="range" class="glass-range">
+           </div>
+           <button class="btn btn-outline full-width mt-1" onclick="app.showToast('Calibration Reset')"><ion-icon name="refresh"></ion-icon> Reset Calibration</button>
+         </div>
+
+         <div class="glass-panel mt-2 borderless">
+           <button class="btn btn-outline danger full-width" onclick="app.logout()">
+             <ion-icon name="log-out-outline"></ion-icon> Logout
+           </button>
+         </div>
+       </main>
+    </section>
+
+    <!-- Avatar Selection Modal -->
+    <div id="avatar-modal" class="glass-card login-card hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; width: 320px; box-shadow: 0 0 40px rgba(0,0,0,0.8);">
+      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>Choose Avatar</h3>
+        <button class="icon-btn" onclick="app.closeAvatarModal()"><ion-icon name="close"></ion-icon></button>
+      </div>
+      <div class="preset-avatars" style="display:flex; flex-wrap:wrap; gap:10px; margin: 20px 0; justify-content:center;">
+        <img src="https://i.pravatar.cc/150?img=11" style="width:50px; height:50px; border-radius:50%; cursor:pointer; border: 2px solid transparent;" onclick="app.selectAvatar(this.src)" onmouseover="this.style.border='2px solid var(--primary-blue)'" onmouseout="this.style.border='2px solid transparent'">
+        <img src="https://i.pravatar.cc/150?img=33" style="width:50px; height:50px; border-radius:50%; cursor:pointer; border: 2px solid transparent;" onclick="app.selectAvatar(this.src)" onmouseover="this.style.border='2px solid var(--primary-blue)'" onmouseout="this.style.border='2px solid transparent'">
+        <img src="https://i.pravatar.cc/150?img=47" style="width:50px; height:50px; border-radius:50%; cursor:pointer; border: 2px solid transparent;" onclick="app.selectAvatar(this.src)" onmouseover="this.style.border='2px solid var(--primary-blue)'" onmouseout="this.style.border='2px solid transparent'">
+        <img src="https://i.pravatar.cc/150?img=68" style="width:50px; height:50px; border-radius:50%; cursor:pointer; border: 2px solid transparent;" onclick="app.selectAvatar(this.src)" onmouseover="this.style.border='2px solid var(--primary-blue)'" onmouseout="this.style.border='2px solid transparent'">
+        <!-- New 6 pics -->
+        <img src="https://i.pravatar.cc/150?img=15" style="width:50px; height:50px; border-radius:50%; cursor:pointer; border: 2px solid transparent;" onclick="app.selectAvatar(this.src)" onmouseover="this.style.border='2px solid var(--primary-blue)'" onmouseout="this.style.border='2px solid transparent'">
+        <img src="https://i.pravatar.cc/150?img=22" style="width:50px; height:50px; border-radius:50%; cursor:pointer; border: 2px solid transparent;" onclick="app.selectAvatar(this.src)" onmouseover="this.style.border='2px solid var(--primary-blue)'" onmouseout="this.style.border='2px solid transparent'">
+        <img src="https://i.pravatar.cc/150?img=38" style="width:50px; height:50px; border-radius:50%; cursor:pointer; border: 2px solid transparent;" onclick="app.selectAvatar(this.src)" onmouseover="this.style.border='2px solid var(--primary-blue)'" onmouseout="this.style.border='2px solid transparent'">
+        <img src="https://i.pravatar.cc/150?img=55" style="width:50px; height:50px; border-radius:50%; cursor:pointer; border: 2px solid transparent;" onclick="app.selectAvatar(this.src)" onmouseover="this.style.border='2px solid var(--primary-blue)'" onmouseout="this.style.border='2px solid transparent'">
+        <img src="https://i.pravatar.cc/150?img=61" style="width:50px; height:50px; border-radius:50%; cursor:pointer; border: 2px solid transparent;" onclick="app.selectAvatar(this.src)" onmouseover="this.style.border='2px solid var(--primary-blue)'" onmouseout="this.style.border='2px solid transparent'">
+        <img src="https://i.pravatar.cc/150?img=70" style="width:50px; height:50px; border-radius:50%; cursor:pointer; border: 2px solid transparent;" onclick="app.selectAvatar(this.src)" onmouseover="this.style.border='2px solid var(--primary-blue)'" onmouseout="this.style.border='2px solid transparent'">
+      </div>
+      <div class="divider"><span>OR</span></div>
+      <button class="btn btn-outline full-width mt-1" onclick="document.getElementById('avatar-upload').click()">
+         <ion-icon name="image-outline"></ion-icon> Upload from Device
+      </button>
+      <input type="file" id="avatar-upload" accept="image/*" style="display:none" onchange="app.handleAvatarUpload(event)">
+    </div>
+
+  </div>
+  
+  <script src="script.js"></script>
+</body>
+</html>
