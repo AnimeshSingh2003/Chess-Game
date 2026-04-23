@@ -1,0 +1,24 @@
+{
+  "name": "archess-nexus-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Socket.IO backend for ARChess Nexus multiplayer",
+  "main": "server.js",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "chess.js": "^1.4.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.1",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "socket.io": "^4.8.3"
+  }
+}
