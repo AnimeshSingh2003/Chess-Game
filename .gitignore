@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Build output
+frontend/dist/
+
+# SQLite database (don't commit data)
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+!backend/.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code local config
+.claude/
+
+# Old orphaned root files
+index.html
+script.js
+style.css
+fix.mjs
+fix_ar.mjs
+fix_mojibake.mjs
+fix_puzzle.mjs
+scan2.mjs
+scan_encoding.mjs

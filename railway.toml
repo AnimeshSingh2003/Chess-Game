@@ -1,0 +1,14 @@
+[build]
+buildCommand = "npm install"
+watchPatterns = ["backend/**"]
+
+[deploy]
+startCommand = "node server.js"
+healthcheckPath = "/"
+runtime = "node24"
+
+[[services]]
+rootDirectory = "backend"
+
+[services.variables]
+PORT = "3001"
