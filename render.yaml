@@ -1,3 +1,6 @@
+# Backend only — frontend is deployed on Vercel
+# After first deploy, set CLIENT_ORIGIN in the Render dashboard
+# to your Vercel URL (e.g. https://your-app.vercel.app)
 services:
   - type: web
     name: archess-backend
@@ -14,16 +17,6 @@ services:
           name: archess-backend
           property: port
       - key: DB_PATH
-        sync: false
+        value: ./archess.sqlite
       - key: CLIENT_ORIGIN
         sync: false
-
-  - type: static
-    name: archess-frontend
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
