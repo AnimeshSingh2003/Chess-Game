@@ -1,6 +1,6 @@
 # Backend only — frontend is deployed on Vercel
-# After first deploy, set CLIENT_ORIGIN in the Render dashboard
-# to your Vercel URL (e.g. https://your-app.vercel.app)
+# Database: Supabase Postgres (free tier) — set DATABASE_URL in Render dashboard
+# After first deploy, also set CLIENT_ORIGIN to your Vercel URL
 services:
   - type: web
     name: archess-backend
@@ -10,13 +10,13 @@ services:
     startCommand: node server.js
     envVars:
       - key: NODE_VERSION
-        value: 24
+        value: 20
       - key: PORT
         fromService:
           type: web
           name: archess-backend
           property: port
-      - key: DB_PATH
-        value: ./archess.sqlite
+      - key: DATABASE_URL
+        sync: false
       - key: CLIENT_ORIGIN
         sync: false

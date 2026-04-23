@@ -95,32 +95,32 @@ app.use(cors({
 }));
 
 // ── Auth middleware helper ─────────────────────────────────────
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '');
-  const user = getUserFromToken(token);
+  const user = await getUserFromToken(token);
   if (!user) return res.status(401).json({ ok: false, error: 'Not authenticated' });
   req.user = user;
   next();
 }
 
 // ── Auth routes ───────────────────────────────────────────────
-app.post('/api/auth/register', authRateLimiter, (req, res) => {
+app.post('/api/auth/register', authRateLimiter, async (req, res) => {
   const { username, password } = req.body || {};
-  const result = registerUser(username, password);
+  const result = await registerUser(username, password);
   if (!result.ok) return res.status(400).json(result);
   res.status(201).json(result);
 });
 
-app.post('/api/auth/login', authRateLimiter, (req, res) => {
+app.post('/api/auth/login', authRateLimiter, async (req, res) => {
   const { username, password } = req.body || {};
-  const result = loginUser(username, password);
+  const result = await loginUser(username, password);
   if (!result.ok) return res.status(401).json(result);
   res.json(result);
 });
 
-app.post('/api/auth/logout', (req, res) => {
+app.post('/api/auth/logout', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
-  logoutToken(token);
+  await logoutToken(token);
   res.json({ ok: true });
 });
 
@@ -129,18 +129,18 @@ app.get('/api/auth/me', requireAuth, (req, res) => {
 });
 
 // ── User stats ────────────────────────────────────────────────
-app.get('/api/user/stats', requireAuth, (req, res) => {
-  const stats = getUserStats(req.user.id);
+app.get('/api/user/stats', requireAuth, async (req, res) => {
+  const stats = await getUserStats(req.user.id);
   res.json({ ok: true, ...stats });
 });
 
 // ── Game result ───────────────────────────────────────────────
-app.post('/api/game/result', requireAuth, (req, res) => {
+app.post('/api/game/result', requireAuth, async (req, res) => {
   const { mode, result, opponent, moves, pgn } = req.body || {};
   if (!mode || !result) return res.status(400).json({ ok: false, error: 'mode and result required' });
   const validResults = ['win', 'loss', 'draw'];
   if (!validResults.includes(result)) return res.status(400).json({ ok: false, error: 'result must be win, loss, or draw' });
-  const xpInfo = saveGameResult(req.user.id, mode, result, opponent, moves, typeof pgn === 'string' ? pgn.slice(0, 8000) : null);
+  const xpInfo = await saveGameResult(req.user.id, mode, result, opponent, moves, typeof pgn === 'string' ? pgn.slice(0, 8000) : null);
   res.status(201).json({ ok: true, ...xpInfo });
 });
 
@@ -156,18 +156,18 @@ app.get('/api/puzzles', (req, res) => {
   res.json({ ok: true, source: 'local', puzzles: fallbackPuzzles.slice(0, count) });
 });
 
-app.post('/api/puzzle-attempts', requireAuth, (req, res) => {
+app.post('/api/puzzle-attempts', requireAuth, async (req, res) => {
   const { puzzleId, selectedMove, expectedMove, timeSpentSec = 0 } = req.body || {};
   if (!puzzleId || !selectedMove || !expectedMove) {
     return res.status(400).json({ ok: false, error: 'Missing fields' });
   }
   const correct = String(selectedMove).trim().toLowerCase() === String(expectedMove).trim().toLowerCase();
-  const xpInfo = savePuzzleAttempt(req.user.id, puzzleId, correct, timeSpentSec);
+  const xpInfo = await savePuzzleAttempt(req.user.id, puzzleId, correct, timeSpentSec);
   res.status(201).json({ ok: true, correct, ...xpInfo });
 });
 
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', rooms: rooms.size, db: 'sqlite' });
+  res.json({ status: 'ok', rooms: rooms.size, db: 'postgres' });
 });
 
 app.use((_req, res) => res.status(404).end());
@@ -418,8 +418,8 @@ io.on('connection', socket => {
   });
 });
 
-function startServer() {
-  initDatabase();
+async function startServer() {
+  await initDatabase();
   httpServer.listen(PORT, () => {
     console.log(`ARChess server listening on :${PORT}  (CORS: LAN + localhost allowed)`);
   });
