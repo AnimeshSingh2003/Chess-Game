@@ -666,7 +666,7 @@ function App() {
           <nav className="bottom-nav glass-panel">
             <button className={`nav-item ${screen === 'home'    ? 'active' : ''}`} onClick={() => setScreen('home')}>Home</button>
             <button className={`nav-item ${screen === 'modes'   ? 'active' : ''}`} onClick={() => setScreen('modes')}>Modes</button>
-            <button className={`nav-item ${screen === 'game'    ? 'active' : ''}`} onClick={() => setScreen('game')}>Game</button>
+            <button className={`nav-item ${screen === 'game' && mode !== 'ar' ? 'active' : ''}`} onClick={() => mode === 'ar' ? startMode('pvp') : setScreen('game')}>Game</button>
             <button className={`nav-item ${mode === 'ar' && screen === 'game' ? 'active' : ''}`}
               onClick={() => { setMode('ar'); setScreen('game'); }}>AR</button>
             <button className={`nav-item ${screen === 'settings' ? 'active' : ''}`} onClick={() => setScreen('settings')}>Settings</button>

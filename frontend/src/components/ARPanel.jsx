@@ -18,6 +18,7 @@ export default function ARPanel({
   statusText = '', isGameOver = false, onReset,
   moveHistory = [], showHistory = false, onToggleHistory,
   hintLoading = false, onRequestHint,
+  onExitAR,
 }) {
   const mountRef    = useRef(null);
   const videoRef    = useRef(null);
@@ -456,6 +457,7 @@ export default function ARPanel({
     if (videoRef.current) videoRef.current.srcObject = null;
     setArActive(false);
     setArStatus('');
+    onExitAR?.();
   }
 
   // ── Non-AR 3D mode ────────────────────────────────────────────

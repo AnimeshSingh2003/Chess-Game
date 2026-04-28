@@ -158,6 +158,7 @@ export default function GameScreen({
           hintLoading={hintLoading}
           onRequestHint={onRequestHint}
           onMove={onMove}
+          onExitAR={() => onStartMode('pvp')}
         />
       </div>
 
