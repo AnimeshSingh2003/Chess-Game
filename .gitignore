@@ -28,13 +28,13 @@ Thumbs.db
 # Claude Code local config
 .claude/
 
-# Old orphaned root files
-index.html
-script.js
-style.css
-fix.mjs
-fix_ar.mjs
-fix_mojibake.mjs
-fix_puzzle.mjs
-scan2.mjs
-scan_encoding.mjs
+# Old orphaned root files (leading / = root only, won't affect frontend/)
+/index.html
+/script.js
+/style.css
+/fix.mjs
+/fix_ar.mjs
+/fix_mojibake.mjs
+/fix_puzzle.mjs
+/scan2.mjs
+/scan_encoding.mjs
