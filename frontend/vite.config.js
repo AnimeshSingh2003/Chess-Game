@@ -1,13 +1,8 @@
 import { defineConfig } from 'vite';
-import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig(({ command }) => ({
-  plugins: [
-    react(),
-    // basicSsl only for local dev (HTTPS), not for production builds
-    ...(command === 'serve' ? [basicSsl()] : []),
-  ],
+export default defineConfig({
+  plugins: [react()],
   server: {
     host: true,
     port: 5173,
@@ -16,4 +11,5 @@ export default defineConfig(({ command }) => ({
       '/socket.io': { target: 'http://localhost:3001', changeOrigin: true, ws: true },
     },
   },
-}));
+});
+
