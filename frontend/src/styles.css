@@ -852,3 +852,162 @@ body[data-board-theme="midnight"] .ar-mount { border-color: #0f0f1a; box-shadow:
 @supports (height: 100dvh) {
   .app-shell { min-height: 100dvh; }
 }
+
+/* ── Board container: allow larger board ── */
+.board-container { width: 100%; max-width: min(96vw, 580px); margin: 0 auto; position: relative; }
+.ar-mount { width: 100%; aspect-ratio: 1; max-height: clamp(250px, 82vw, 580px); }
+
+/* ── Clock row ── */
+.clock-row {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 6px 0; margin-bottom: 2px;
+}
+.clock-box {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 8px 18px; border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.04);
+  transition: all 0.2s;
+}
+.clock-box.clock-active {
+  background: rgba(0,191,255,0.14);
+  border-color: rgba(0,191,255,0.5);
+  box-shadow: 0 0 12px rgba(0,191,255,0.25);
+}
+.clock-time { font-size: 1.4rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+.clock-label { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px; }
+.clock-vs { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+.clock-box.clock-active .clock-time { color: var(--primary-blue); }
+
+/* ── Time control picker ── */
+.time-control-picker { position: relative; }
+.tc-btn { background: rgba(255,255,255,0.05); }
+.tc-dropdown {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 200;
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 8px; min-width: 160px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: rgba(10,13,22,0.97);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+}
+.tc-option {
+  text-align: left; padding: 7px 12px; border: none;
+  border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600;
+  color: var(--text-main); background: transparent; transition: background 0.15s;
+}
+.tc-option:hover { background: rgba(0,191,255,0.12); }
+.tc-option.tc-active { background: rgba(0,191,255,0.2); color: var(--primary-blue); }
+
+/* Time control chip grid (ModesScreen) */
+.tc-section { margin-top: 12px; }
+.tc-section-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 700; margin-bottom: 6px; display: block; }
+.tc-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.tc-chip {
+  padding: 5px 10px; border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill); background: rgba(255,255,255,0.04);
+  color: var(--text-muted); font-size: 0.76rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.tc-chip:hover { border-color: rgba(0,191,255,0.35); color: var(--text-main); }
+.tc-chip.tc-active { background: rgba(0,191,255,0.18); border-color: rgba(0,191,255,0.5); color: var(--primary-blue); }
+
+/* ── Mode toolbar ── */
+.mode-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 6px 0; border-bottom: 1px solid var(--glass-border);
+  margin-bottom: 6px;
+}
+.toolbar-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ai-status { font-size: 0.78rem; color: var(--text-muted); }
+.ai-status.thinking { color: var(--accent-yellow); }
+.color-indicator { font-size: 0.85rem; }
+
+/* AR online row */
+.ar-online-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.ar-opp-toggle { display: flex; gap: 4px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--glass-border); }
+.ar-opp-btn {
+  padding: 6px 11px; border: none; background: transparent;
+  color: var(--text-muted); font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.ar-opp-btn.active { background: rgba(0,191,255,0.2); color: var(--primary-blue); }
+
+/* Quick online join row */
+.online-quick-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding-top: 8px; margin-top: 4px; border-top: 1px solid var(--glass-border);
+}
+
+/* Puzzle meta label */
+.puzzle-meta { font-size: 0.8rem; color: var(--text-muted); }
+.status-correct { color: #00ff9d; }
+.status-wrong   { color: var(--accent-red); }
+
+/* Pending overlay on board */
+.pending-overlay {
+  position: absolute; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.35); border-radius: var(--radius-sm);
+}
+.waiting-spinner.small { width: 28px; height: 28px; }
+
+/* ── Win rate banner (Profile) ── */
+.winrate-banner {
+  display: flex; align-items: center; gap: 18px;
+  padding: 14px 18px; margin: 10px 0;
+  background: rgba(255,255,255,0.04);
+}
+.winrate-circle {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 68px;
+  padding: 10px 14px;
+  border-radius: 50%;
+  background: rgba(0,191,255,0.1);
+  border: 2px solid rgba(0,191,255,0.3);
+}
+.winrate-pct { font-size: 1.4rem; font-weight: 900; color: var(--primary-blue); line-height: 1; }
+.winrate-label { font-size: 0.65rem; color: var(--text-muted); margin-top: 2px; }
+.winrate-breakdown { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+.wr-item { font-size: 0.82rem; font-weight: 700; }
+.wr-item.green  { color: #00ff9d; }
+.wr-item.red    { color: var(--accent-red); }
+.wr-item.yellow { color: var(--accent-yellow); }
+.wr-item.blue   { color: var(--primary-blue); }
+
+/* Profile level card */
+.profile-level-card { padding: 14px; margin-bottom: 10px; }
+.profile-level-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.level-big { font-size: 1.15rem; font-weight: 800; }
+.xp-total { font-size: 0.78rem; color: var(--text-muted); }
+.profile-xp-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+.profile-xp-fill { height: 100%; background: linear-gradient(90deg, var(--primary-blue), var(--accent-purple)); border-radius: 4px; transition: width 0.5s ease; }
+.profile-avatar { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple)); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 900; color: #fff; flex-shrink: 0; }
+.profile-header { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+.profile-name { font-size: 1.15rem; font-weight: 800; margin: 0 0 3px; }
+.profile-level-badge { margin-top: 0; }
+
+/* Recent games list */
+.recent-list { display: flex; flex-direction: column; gap: 5px; }
+.recent-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.04); font-size: 0.82rem;
+  border-left: 3px solid transparent;
+}
+.recent-row.result-win   { border-left-color: #00ff9d; }
+.recent-row.result-loss  { border-left-color: var(--accent-red); }
+.recent-row.result-draw  { border-left-color: var(--accent-yellow); }
+.recent-mode  { color: var(--text-muted); min-width: 64px; font-size: 0.75rem; }
+.recent-result { font-weight: 800; min-width: 38px; }
+.recent-result.win  { color: #00ff9d; }
+.recent-result.loss { color: var(--accent-red); }
+.recent-result.draw { color: var(--accent-yellow); }
+.recent-opp   { flex: 1; color: var(--text-main); }
+.recent-moves { color: var(--text-muted); font-size: 0.74rem; }
+
+/* Mode card desc text */
+.mode-desc { font-size: 0.68rem; color: var(--text-muted); }
+
+/* GameOver XP text */
+.gameover-xp { color: #00ff9d; font-size: 0.9rem; font-weight: 700; }

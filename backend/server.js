@@ -416,6 +416,18 @@ io.on('connection', socket => {
 
     io.to(roomCode).emit('room:update', toClientState(room));
   });
+
+  socket.on('room:forfeit', ({ code }) => {
+    if (!code) return;
+    // Notify the opponent that the current player forfeited
+    socket.to(code).emit('game:forfeit', { winner: 'opponent', reason: 'Opponent forfeited' });
+    // Clean up the room
+    const room = rooms.get(code);
+    if (room) {
+      untrackRoomForIp(room.creatorIp, code);
+      rooms.delete(code);
+    }
+  });
 });
 
 async function startServer() {

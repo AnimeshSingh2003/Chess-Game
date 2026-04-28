@@ -59,6 +59,12 @@ function App() {
   const [hintLoading, setHintLoading] = useState(false);
   const aiCancelRef = useRef(0);
 
+  // ── Time controls ────────────────────────────────────────────────
+  const [timeControl, setTimeControl] = useState('unlimited'); // 'unlimited'|'bullet1'|'bullet2'|'blitz3'|'blitz5'|'rapid10'|'rapid15'|'classical30'
+  const [whiteTime,   setWhiteTime]   = useState(null); // seconds remaining
+  const [blackTime,   setBlackTime]   = useState(null);
+  const clockRef = useRef(null);
+
   // ── Online / socket state ──────────────────────────────────────
   const socketRef = useRef(null);
   const [netStatus,      setNetStatus]      = useState('offline');
@@ -69,6 +75,8 @@ function App() {
   const [opponentJoined, setOpponentJoined] = useState(false);
   const [copied,         setCopied]         = useState(false);
   const [movePending,    setMovePending]    = useState(false);
+  const [arRoomCode,     setArRoomCode]     = useState('');  // AR multiplayer
+  const [arJoinCode,     setArJoinCode]     = useState('');
 
   // ── Puzzles ────────────────────────────────────────────────────
   const [puzzleIndex,  setPuzzleIndex]  = useState(0);
@@ -79,10 +87,13 @@ function App() {
   const isGameOver = engine.isCheckmate() || engine.isStalemate() || engine.isDraw();
 
   const selectableColor = useMemo(() => {
-    if (mode === 'pvai')                        return 'w';
-    if (mode === 'ar' && arOpponent === 'pvai') return 'w';
-    if (mode === 'pvp-online')                  return myColor;
-    if (mode === 'puzzle')                      return engine.turn();
+    if (mode === 'pvp')                               return null; // both sides local
+    if (mode === 'pvai')                              return 'w';
+    if (mode === 'ar' && arOpponent === 'pvp')        return null;
+    if (mode === 'ar' && arOpponent === 'pvai')       return 'w';
+    if (mode === 'ar' && arOpponent === 'pvp-online') return myColor;
+    if (mode === 'pvp-online')                        return myColor;
+    if (mode === 'puzzle')                            return engine.turn();
     return null;
   }, [mode, myColor, engine, arOpponent]);
 
@@ -131,6 +142,26 @@ function App() {
   useEffect(() => {
     if (mode === 'ar') resetBoard(); // eslint-disable-line react-hooks/exhaustive-deps
   }, [arOpponent]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Clock tick ────────────────────────────────────────────────
+  useEffect(() => {
+    if (timeControl === 'unlimited' || isGameOver || !whiteTime || !blackTime) return;
+    const turn = engine.turn();
+    clockRef.current = setInterval(() => {
+      if (turn === 'w') {
+        setWhiteTime(t => {
+          if (t <= 1) { clearInterval(clockRef.current); recordGameResult('loss'); setNotice('White ran out of time!'); return 0; }
+          return t - 1;
+        });
+      } else {
+        setBlackTime(t => {
+          if (t <= 1) { clearInterval(clockRef.current); recordGameResult('win'); setNotice('Black ran out of time!'); return 0; }
+          return t - 1;
+        });
+      }
+    }, 1000);
+    return () => clearInterval(clockRef.current);
+  }, [engine, timeControl, isGameOver]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── AI loop ────────────────────────────────────────────────────
   useEffect(() => {
@@ -278,6 +309,32 @@ function App() {
     } catch (_) { setSavedGame(null); }
   }
 
+  // ── Time control helpers ────────────────────────────────────────
+  const TIME_PRESETS = {
+    'unlimited': null,
+    'bullet1':   60,
+    'bullet2':   120,
+    'blitz3':    180,
+    'blitz5':    300,
+    'rapid10':   600,
+    'rapid15':   900,
+    'classical30': 1800,
+  };
+
+  function initClock(tc) {
+    clearInterval(clockRef.current);
+    const secs = TIME_PRESETS[tc] ?? null;
+    setWhiteTime(secs);
+    setBlackTime(secs);
+  }
+
+  function formatTime(secs) {
+    if (secs === null) return '∞';
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  }
+
   // ── Socket ─────────────────────────────────────────────────────
   function connectSocket() {
     if (socketRef.current?.connected) return socketRef.current;
@@ -319,6 +376,11 @@ function App() {
       setRoomCode(''); setMyColor(null);
       setOpponentJoined(false); setMovePending(false);
       setMode('pvp'); setScreen('modes');
+    });
+    s.on('game:forfeit', ({ winner, reason }) => {
+      setNotice(`${reason || 'Opponent forfeited'} — ${winner} wins!`);
+      playChessSound('gameover');
+      recordGameResult(winner === (myColor === 'w' ? 'white' : 'black') ? 'win' : 'loss');
     });
     socketRef.current = s;
     return s;
@@ -368,11 +430,20 @@ function App() {
     setMovePending(false); setDrawOffered(false); clearSavedGame(); setSavedGame(null);
   }
 
-  function startMode(nextMode) {
+  function startMode(nextMode, opts = {}) {
+    // Disconnect from any active online room before switching modes
+    if (mode === 'pvp-online' && roomCode && !isGameOver) {
+      socketRef.current?.emit('room:leave', { code: roomCode });
+      setRoomCode(''); setMyColor(null); setOpponentJoined(false);
+    }
     aiCancelRef.current++;
     setAiThinking(false); setMode(nextMode); setNotice(''); setMovePending(false); setDrawOffered(false);
     if (nextMode === 'puzzle') setPuzzleStatus('');
-    if (nextMode === 'pvp' || nextMode === 'pvai' || nextMode === 'ar') resetBoard();
+    if (nextMode !== 'pvp-online') resetBoard();
+    // Apply time control
+    const tc = opts.timeControl || 'unlimited';
+    setTimeControl(tc);
+    initClock(tc);
     setScreen('game');
   }
 
@@ -399,6 +470,16 @@ function App() {
       } catch (_) {}
       setHintLoading(false);
     }, 30);
+  }
+
+  // ── Forfeit / Exit online room ─────────────────────────────────
+  function handleForfeit() {
+    if (mode !== 'pvp-online' || !roomCode) return;
+    socketRef.current?.emit('room:forfeit', { code: roomCode });
+    recordGameResult('loss');
+    setRoomCode(''); setMyColor(null); setOpponentJoined(false); setMovePending(false);
+    setMode('pvp'); setScreen('modes');
+    setNotice('You forfeited — opponent wins');
   }
 
   // ── Resign / Draw ──────────────────────────────────────────────
@@ -551,12 +632,17 @@ function App() {
               opponentJoined={opponentJoined} joinCode={joinCode} setJoinCode={setJoinCode}
               aiDepth={aiDepth} setAiDepth={setAiDepth} aiCancelRef={aiCancelRef} aiThinking={aiThinking}
               arOpponent={arOpponent} setArOpponent={setArOpponent}
+              arRoomCode={arRoomCode} arJoinCode={arJoinCode} setArJoinCode={setArJoinCode}
               puzzleIndex={puzzleIndex} puzzles={puzzles} puzzleStatus={puzzleStatus}
               onNextPuzzle={() => setPuzzleIndex(i => (i + 1) % puzzles.length)}
               hintLoading={hintLoading} drawOffered={drawOffered}
+              timeControl={timeControl} setTimeControl={setTimeControl}
+              whiteTime={whiteTime} blackTime={blackTime} formatTime={formatTime}
               onMove={handleMove} onReset={resetBoard}
               onRequestHint={requestHint} onDrawOffer={handleDrawOffer} onResign={handleResign}
+              onForfeit={handleForfeit}
               onCreateRoom={createRoom} onJoinRoom={joinRoom} onCopyRoomCode={copyRoomCode}
+              onStartMode={startMode}
               userXp={userXp} boardTheme={boardTheme}
             />
           )}
@@ -565,6 +651,7 @@ function App() {
             <ProfileScreen
               playerName={playerName} userXp={userXp} userLevel={userLevel}
               xpProgress={xpProgress} xpToNext={xpToNext} stats={stats}
+              onLoadStats={loadStats}
             />
           )}
 
