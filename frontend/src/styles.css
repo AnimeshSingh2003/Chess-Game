@@ -31,9 +31,7 @@
 
   /* Board size — overridden by JS via body.style.setProperty('--board-size', ...) */
   --board-size: 80vw;
-}
-
-/* ── Reset ── */
+}/* ── Reset ── */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
@@ -447,9 +445,10 @@ body {
 
 .ar-mount {
   width: 100%;
-  /* Fills available viewport height minus fixed chrome (header ~90px + nav ~66px + controls ~100px + padding) */
   aspect-ratio: 1 / 1;
-  max-height: clamp(240px, calc(100svh - 300px), 500px);
+  /* Size controlled by --board-size CSS variable set from Settings slider */
+  max-width: min(var(--board-size, 80vw), 700px);
+  max-height: min(var(--board-size, 80vw), 700px);
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--glass-border);
@@ -891,15 +890,8 @@ body[data-theme="light"] .tc-option:hover { background: rgba(0,100,200,0.1); }
 /* ── Board container: controlled by --board-size CSS var (set from JS) ── */
 .board-container {
   width: 100%;
-  max-width: min(var(--board-size, 96vw), 700px);
+  max-width: min(var(--board-size, 80vw), 700px);
   margin: 0 auto; position: relative;
-}
-.ar-mount {
-  width: 100%;
-  aspect-ratio: 1;
-  /* match the same constraint as .board-container so aspect-ratio doesn't fight it */
-  max-width: min(var(--board-size, 96vw), 700px);
-  max-height: min(var(--board-size, 96vw), 700px);
 }
 
 /* ── Clock row ── */
