@@ -78,6 +78,11 @@ function App() {
   const [arRoomCode,     setArRoomCode]     = useState('');  // AR multiplayer
   const [arJoinCode,     setArJoinCode]     = useState('');
 
+  // ── UI prefs ───────────────────────────────────────────────────
+  const [darkMode,  setDarkMode]  = useState(() => localStorage.getItem('uiTheme') !== 'light');
+  const [boardSize, setBoardSize] = useState(() => Number(localStorage.getItem('boardSize')) || 70);
+  const [forfeitResult, setForfeitResult] = useState(null); // {won, reason}
+
   // ── Puzzles ────────────────────────────────────────────────────
   const [puzzleIndex,  setPuzzleIndex]  = useState(0);
   const [puzzles,      setPuzzles]      = useState(PUZZLES);
@@ -85,6 +90,32 @@ function App() {
 
   // ── Derived ────────────────────────────────────────────────────
   const isGameOver = engine.isCheckmate() || engine.isStalemate() || engine.isDraw();
+
+  // Captured pieces from verbose history
+  const capturedPieces = useMemo(() => {
+    const h = engine.history({ verbose: true });
+    const byWhite = []; const byBlack = [];
+    for (const m of h) {
+      if (m.captured) {
+        if (m.color === 'w') byWhite.push(m.captured);
+        else byBlack.push(m.captured);
+      }
+    }
+    return { byWhite, byBlack };
+  }, [engine]);
+
+  // Material balance: positive = white advantage
+  const materialBalance = useMemo(() => {
+    const VALS = { p: 1, n: 3, b: 3, r: 5, q: 9 };
+    let score = 0;
+    for (const row of engine.board()) {
+      for (const sq of row) {
+        if (!sq) continue;
+        score += (sq.color === 'w' ? 1 : -1) * (VALS[sq.type] || 0);
+      }
+    }
+    return score;
+  }, [engine]);
 
   const selectableColor = useMemo(() => {
     if (mode === 'pvp')                               return null; // both sides local
@@ -137,6 +168,17 @@ function App() {
     document.body.setAttribute('data-board-theme', boardTheme);
     localStorage.setItem(KEYS.THEME, boardTheme);
   }, [boardTheme]);
+
+  // Persist dark/light mode
+  useEffect(() => {
+    document.body.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+    localStorage.setItem('uiTheme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
+
+  // Persist board size
+  useEffect(() => {
+    localStorage.setItem('boardSize', String(boardSize));
+  }, [boardSize]);
 
   // Reset board when AR opponent mode switches
   useEffect(() => {
@@ -214,6 +256,11 @@ function App() {
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
+
+  // Auto-record win when opponent forfeits
+  useEffect(() => {
+    if (forfeitResult?.won) recordGameResult('win');
+  }, [forfeitResult]); // eslint-disable-line
 
   // Auto-record game result on game over (all modes except puzzle)
   useEffect(() => {
@@ -377,10 +424,9 @@ function App() {
       setOpponentJoined(false); setMovePending(false);
       setMode('pvp'); setScreen('modes');
     });
-    s.on('game:forfeit', ({ winner, reason }) => {
-      setNotice(`${reason || 'Opponent forfeited'} — ${winner} wins!`);
+    s.on('game:forfeit', ({ reason }) => {
       playChessSound('gameover');
-      recordGameResult(winner === (myColor === 'w' ? 'white' : 'black') ? 'win' : 'loss');
+      setForfeitResult({ won: true, reason: reason || 'Opponent forfeited' });
     });
     socketRef.current = s;
     return s;
@@ -410,6 +456,37 @@ function App() {
       setOpponentJoined(!!(res.room.players?.white && res.room.players?.black));
       setMovePending(false); setMode('pvp-online'); setScreen('game');
       setNotice(`Joined room: ${res.room.code}`);
+    });
+  }
+
+  // AR-specific online room functions (keep mode='ar')
+  function createArRoom() {
+    setArOpponent('pvp-online');
+    const s = connectSocket();
+    s.emit('room:create', { username: playerName }, res => {
+      if (!res?.ok) { setNotice(res?.error || 'Could not create AR room'); return; }
+      setRoomCode(res.room.code); setArRoomCode(res.room.code);
+      setMyColor(res.color === 'white' ? 'w' : 'b');
+      setEngine(new Chess(res.room.fen)); setMoveHistory([]);
+      setOpponentJoined(false); setMovePending(false);
+      setMode('ar'); setScreen('game');
+      setNotice(`AR Room: ${res.room.code}`);
+    });
+  }
+
+  function joinArRoom() {
+    const code = (arJoinCode || '').trim().toUpperCase();
+    if (!code) { setNotice('Enter an AR room code first'); return; }
+    setArOpponent('pvp-online');
+    const s = connectSocket();
+    s.emit('room:join', { code, username: playerName }, res => {
+      if (!res?.ok) { setNotice(res?.error || 'Could not join AR room'); return; }
+      setRoomCode(res.room.code); setArRoomCode(res.room.code);
+      setMyColor(res.color === 'white' ? 'w' : 'b');
+      setEngine(new Chess(res.room.fen)); setMoveHistory([]);
+      setOpponentJoined(!!(res.room.players?.white && res.room.players?.black));
+      setMovePending(false); setMode('ar'); setScreen('game');
+      setNotice(`Joined AR Room: ${res.room.code}`);
     });
   }
 
@@ -474,12 +551,21 @@ function App() {
 
   // ── Forfeit / Exit online room ─────────────────────────────────
   function handleForfeit() {
-    if (mode !== 'pvp-online' || !roomCode) return;
+    const isOnline = mode === 'pvp-online' || (mode === 'ar' && arOpponent === 'pvp-online');
+    if (!isOnline || !roomCode) return;
     socketRef.current?.emit('room:forfeit', { code: roomCode });
     recordGameResult('loss');
-    setRoomCode(''); setMyColor(null); setOpponentJoined(false); setMovePending(false);
+    setRoomCode(''); setArRoomCode(''); setMyColor(null);
+    setOpponentJoined(false); setMovePending(false);
     setMode('pvp'); setScreen('modes');
     setNotice('You forfeited — opponent wins');
+  }
+
+  function dismissForfeit() {
+    setForfeitResult(null);
+    setRoomCode(''); setArRoomCode(''); setMyColor(null);
+    setOpponentJoined(false); setMovePending(false);
+    resetBoard(); setMode('pvp'); setScreen('modes');
   }
 
   // ── Resign / Draw ──────────────────────────────────────────────
@@ -638,10 +724,14 @@ function App() {
               hintLoading={hintLoading} drawOffered={drawOffered}
               timeControl={timeControl} setTimeControl={setTimeControl}
               whiteTime={whiteTime} blackTime={blackTime} formatTime={formatTime}
+              capturedPieces={capturedPieces} materialBalance={materialBalance}
+              boardSize={boardSize}
+              forfeitResult={forfeitResult} onDismissForfeit={dismissForfeit}
               onMove={handleMove} onReset={resetBoard}
               onRequestHint={requestHint} onDrawOffer={handleDrawOffer} onResign={handleResign}
               onForfeit={handleForfeit}
               onCreateRoom={createRoom} onJoinRoom={joinRoom} onCopyRoomCode={copyRoomCode}
+              onCreateArRoom={createArRoom} onJoinArRoom={joinArRoom}
               onStartMode={startMode}
               userXp={userXp} boardTheme={boardTheme}
             />
@@ -658,6 +748,8 @@ function App() {
           {screen === 'settings' && (
             <SettingsScreen
               boardTheme={boardTheme} setBoardTheme={setBoardTheme}
+              darkMode={darkMode} setDarkMode={setDarkMode}
+              boardSize={boardSize} setBoardSize={setBoardSize}
               onLogout={handleLogout}
               onClearSave={() => { clearSavedGame(); setSavedGame(null); setNotice('Saved game cleared'); }}
             />

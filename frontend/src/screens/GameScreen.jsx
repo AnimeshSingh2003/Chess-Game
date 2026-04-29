@@ -1,6 +1,49 @@
 import React, { useState } from 'react';
 import ARPanel from '../components/ARPanel.jsx';
 
+const PIECE_SYMBOLS = {
+  w: { p: '♙', n: '♘', b: '♗', r: '♖', q: '♕' },
+  b: { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛' },
+};
+
+const TIME_LABELS = {
+  'unlimited':   '∞ Unlimited',
+  'bullet1':     '⚡ 1 min',
+  'bullet2':     '⚡ 2 min',
+  'blitz3':      '🔥 3 min',
+  'blitz5':      '🔥 5 min',
+  'rapid10':     '⏱ 10 min',
+  'rapid15':     '⏱ 15 min',
+  'classical30': '🎓 30 min',
+};
+
+function CapturedRow({ pieces, color }) {
+  const ORDER = ['q', 'r', 'b', 'n', 'p'];
+  const sorted = [...pieces].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
+  if (!sorted.length) return null;
+  return (
+    <div className="captured-row">
+      {sorted.map((p, i) => <span key={i} className="captured-piece">{PIECE_SYMBOLS[color][p]}</span>)}
+    </div>
+  );
+}
+
+function EvalBar({ balance }) {
+  const clamped = Math.max(-15, Math.min(15, balance));
+  const whitePct = 50 + (clamped / 15) * 48;
+  const label = balance === 0 ? '=' : balance > 0 ? `+${balance}` : `${balance}`;
+  return (
+    <div className="eval-bar-wrap">
+      <span className="eval-label">♟</span>
+      <div className="eval-bar">
+        <div className="eval-bar-fill" style={{ width: `${whitePct}%` }} />
+      </div>
+      <span className="eval-label">♙</span>
+      <span className="eval-score">{label}</span>
+    </div>
+  );
+}
+
 export default function GameScreen({
   mode, engine, myColor, selectableColor,
   boardApiRef, isGameOver, statusText,
@@ -13,25 +56,18 @@ export default function GameScreen({
   puzzleIndex, puzzles, puzzleStatus, onNextPuzzle,
   hintLoading, drawOffered,
   timeControl, setTimeControl, whiteTime, blackTime, formatTime,
+  capturedPieces, materialBalance, boardSize,
+  forfeitResult, onDismissForfeit,
   onMove, onReset, onRequestHint, onDrawOffer, onResign, onForfeit,
-  onCreateRoom, onJoinRoom, onCopyRoomCode, onStartMode,
+  onCreateRoom, onJoinRoom, onCopyRoomCode,
+  onCreateArRoom, onJoinArRoom,
+  onStartMode,
   userXp, boardTheme,
 }) {
   const puzzle = puzzles[puzzleIndex];
-
-  // Board is flipped when playing as black in any online mode
   const flipped = myColor === 'b';
-
-  const TIME_LABELS = {
-    'unlimited':   '∞ Unlimited',
-    'bullet1':     '⚡ 1 min',
-    'bullet2':     '⚡ 2 min',
-    'blitz3':      '🔥 3 min',
-    'blitz5':      '🔥 5 min',
-    'rapid10':     '⏱ 10 min',
-    'rapid15':     '⏱ 15 min',
-    'classical30': '🎓 30 min',
-  };
+  const isOnlineAR = mode === 'ar' && arOpponent === 'pvp-online';
+  const boardStyle = boardSize ? { maxWidth: `min(${boardSize}vw, 700px)` } : {};
 
   return (
     <section className="panel gameplay-screen glass-panel">
@@ -78,11 +114,18 @@ export default function GameScreen({
           {arOpponent === 'pvai' && aiThinking && <span className="ai-status thinking">⏳ Thinking…</span>}
           {arOpponent === 'pvp-online' && (
             <div className="ar-online-row">
-              <button className="ctrl-btn" onClick={onCreateRoom}>+ Room</button>
+              <button className="ctrl-btn" onClick={onCreateArRoom}>+ Create</button>
               <input value={arJoinCode || ''} onChange={e => setArJoinCode(e.target.value.toUpperCase())}
                 placeholder="Code" maxLength={8} style={{ width: 80 }} />
-              <button className="ctrl-btn" onClick={onJoinRoom} disabled={!(arJoinCode || '').trim()}>Join</button>
-              {arRoomCode && <span className="glass-pill" style={{ fontSize: '0.8rem' }}>Room: <strong>{arRoomCode}</strong></span>}
+              <button className="ctrl-btn" onClick={onJoinArRoom} disabled={!(arJoinCode || '').trim()}>Join</button>
+              {arRoomCode && (
+                <span className="glass-pill" style={{ fontSize: '0.8rem' }}>
+                  Room: <strong>{arRoomCode}</strong>
+                  {opponentJoined
+                    ? <span style={{ color: '#00ff9d', marginLeft: 5 }}>● Playing</span>
+                    : <span style={{ color: '#ffd700', marginLeft: 5 }}>⌛ Waiting…</span>}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -100,7 +143,7 @@ export default function GameScreen({
       )}
 
       {/* ── Online: color indicator ── */}
-      {mode === 'pvp-online' && myColor && (
+      {(mode === 'pvp-online' || isOnlineAR) && myColor && (
         <div className="mode-toolbar color-indicator">
           You play as: <strong style={{ color: myColor === 'w' ? '#fff' : '#aaa', marginLeft: 6 }}>
             {myColor === 'w' ? '♙ White' : '♟ Black'}
@@ -124,9 +167,24 @@ export default function GameScreen({
         </div>
       )}
 
+      {/* ── Black's captures (shown above board) ── */}
+      {capturedPieces?.byBlack?.length > 0 && <CapturedRow pieces={capturedPieces.byBlack} color="w" />}
+
+      {/* ── Eval bar ── */}
+      {mode !== 'puzzle' && <EvalBar balance={materialBalance || 0} />}
+
       {/* ── Board ── */}
-      <div className="board-container holographic">
-        {isGameOver && mode !== 'ar' && (
+      <div className="board-container holographic" style={boardStyle}>
+        {forfeitResult && (
+          <div className="gameover-overlay">
+            <div className="gameover-card glass-card">
+              <p className="gameover-title">{forfeitResult.won ? '🏆 You Won!' : '😞 You Lost'}</p>
+              <p className="muted" style={{ marginBottom: 12 }}>{forfeitResult.reason}</p>
+              <button className="primary-btn" onClick={onDismissForfeit}>Back to Modes</button>
+            </div>
+          </div>
+        )}
+        {isGameOver && mode !== 'ar' && !forfeitResult && (
           <div className="gameover-overlay">
             <div className="gameover-card glass-card">
               <p className="gameover-title">{statusText}</p>
@@ -138,7 +196,7 @@ export default function GameScreen({
             </div>
           </div>
         )}
-        {movePending && mode === 'pvp-online' && (
+        {movePending && (mode === 'pvp-online' || isOnlineAR) && (
           <div className="pending-overlay"><div className="waiting-spinner small" /></div>
         )}
         <ARPanel
@@ -162,10 +220,13 @@ export default function GameScreen({
         />
       </div>
 
+      {/* ── White's captures (shown below board) ── */}
+      {capturedPieces?.byWhite?.length > 0 && <CapturedRow pieces={capturedPieces.byWhite} color="b" />}
+
       {/* ── Controls ── */}
       <div className="game-controls">
         <button onClick={onReset} className="ctrl-btn">↺ Reset</button>
-        {mode !== 'puzzle' && mode !== 'pvp-online' && (
+        {mode !== 'puzzle' && mode !== 'pvp-online' && !isOnlineAR && (
           <>
             <button onClick={onRequestHint} className="ctrl-btn hint-btn" disabled={hintLoading || isGameOver}>
               {hintLoading ? <span className="btn-spinner" /> : '💡'} Hint
@@ -176,7 +237,7 @@ export default function GameScreen({
             <button onClick={onResign} className="ctrl-btn resign-btn" disabled={isGameOver}>⚑ Resign</button>
           </>
         )}
-        {mode === 'pvp-online' && !isGameOver && (
+        {(mode === 'pvp-online' || isOnlineAR) && !isGameOver && (
           <button onClick={onForfeit} className="ctrl-btn resign-btn">🚪 Exit &amp; Forfeit</button>
         )}
         <button onClick={() => setShowHistory(h => !h)} className={`ctrl-btn${showHistory ? ' active' : ''}`}>
