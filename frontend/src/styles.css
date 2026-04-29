@@ -28,6 +28,9 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left:   env(safe-area-inset-left,   0px);
   --safe-right:  env(safe-area-inset-right,  0px);
+
+  /* Board size — overridden by JS via body.style.setProperty('--board-size', ...) */
+  --board-size: 80vw;
 }
 
 /* ── Reset ── */
@@ -635,8 +638,6 @@ body[data-board-theme="midnight"] .ar-mount { border-color: #0f0f1a; box-shadow:
   .action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dashboard-header { flex-direction: column; align-items: flex-start; }
   .status-pills { justify-content: flex-start; max-width: 100%; }
-  /* Board: max 72vw keeps controls visible below it without scrolling */
-  .ar-mount { max-height: clamp(220px, 72vw, 380px); }
 }
 
 /* ── Responsive: ≤ 480px ── */
@@ -656,7 +657,6 @@ body[data-board-theme="midnight"] .ar-mount { border-color: #0f0f1a; box-shadow:
   .gameover-card { padding: 20px; }
   .gameover-title { font-size: 1.05rem; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .ar-mount { max-height: clamp(200px, 68vw, 340px); }
   .game-controls { gap: 5px; }
   .ctrl-btn { padding: 6px 8px; font-size: 0.72rem; }
 }
@@ -665,7 +665,6 @@ body[data-board-theme="midnight"] .ar-mount { border-color: #0f0f1a; box-shadow:
 @media (max-height: 520px) and (orientation: landscape) {
   .dashboard-header { padding: 4px 10px; }
   .board-container  { padding: 2px 0; }
-  .ar-mount { max-height: 78vmin; }
   .bottom-nav { padding: 4px; }
   .nav-item   { padding: 6px 2px; font-size: 0.62rem; }
   .app-shell  { gap: 6px; padding-top: 6px; }
@@ -889,9 +888,19 @@ body[data-theme="light"] .move-san.black-move { background: rgba(0,0,0,0.13); co
 body[data-theme="light"] .tc-dropdown { background: rgba(240,244,252,0.98); }
 body[data-theme="light"] .tc-option:hover { background: rgba(0,100,200,0.1); }
 
-/* ── Board container: allow larger board ── */
-.board-container { width: 100%; max-width: min(96vw, 580px); margin: 0 auto; position: relative; }
-.ar-mount { width: 100%; aspect-ratio: 1; max-height: clamp(250px, 82vw, 580px); }
+/* ── Board container: controlled by --board-size CSS var (set from JS) ── */
+.board-container {
+  width: 100%;
+  max-width: min(var(--board-size, 96vw), 700px);
+  margin: 0 auto; position: relative;
+}
+.ar-mount {
+  width: 100%;
+  aspect-ratio: 1;
+  /* match the same constraint as .board-container so aspect-ratio doesn't fight it */
+  max-width: min(var(--board-size, 96vw), 700px);
+  max-height: min(var(--board-size, 96vw), 700px);
+}
 
 /* ── Clock row ── */
 .clock-row {
@@ -936,6 +945,7 @@ body[data-theme="light"] .eval-bar-fill { background: #2d3748; }
   font-size: 0.72rem; font-weight: 700; min-width: 26px; text-align: right;
   color: var(--text-muted);
 }
+.eval-tag { font-size: 0.62rem; color: var(--text-muted); opacity: 0.55; margin-left: 2px; }
 
 /* ── Captured pieces ── */
 .captured-row {

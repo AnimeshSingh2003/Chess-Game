@@ -175,10 +175,16 @@ function App() {
     localStorage.setItem('uiTheme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
 
-  // Persist board size
+  // Persist board size + apply as CSS variable (controls both .board-container and .ar-mount)
   useEffect(() => {
     localStorage.setItem('boardSize', String(boardSize));
+    document.body.style.setProperty('--board-size', `${boardSize}vw`);
   }, [boardSize]);
+
+  // Init clock whenever time control changes (covers picker dropdown mid-game)
+  useEffect(() => {
+    initClock(timeControl);
+  }, [timeControl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset board when AR opponent mode switches
   useEffect(() => {
@@ -517,10 +523,9 @@ function App() {
     setAiThinking(false); setMode(nextMode); setNotice(''); setMovePending(false); setDrawOffered(false);
     if (nextMode === 'puzzle') setPuzzleStatus('');
     if (nextMode !== 'pvp-online') resetBoard();
-    // Apply time control
+    // Apply time control — useEffect on timeControl will call initClock
     const tc = opts.timeControl || 'unlimited';
     setTimeControl(tc);
-    initClock(tc);
     setScreen('game');
   }
 

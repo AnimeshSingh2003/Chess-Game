@@ -33,13 +33,14 @@ function EvalBar({ balance }) {
   const whitePct = 50 + (clamped / 15) * 48;
   const label = balance === 0 ? '=' : balance > 0 ? `+${balance}` : `${balance}`;
   return (
-    <div className="eval-bar-wrap">
-      <span className="eval-label">♟</span>
+    <div className="eval-bar-wrap" title="Material balance (captured piece advantage)">
+      <span className="eval-label" title="Black">♟</span>
       <div className="eval-bar">
         <div className="eval-bar-fill" style={{ width: `${whitePct}%` }} />
       </div>
-      <span className="eval-label">♙</span>
+      <span className="eval-label" title="White">♙</span>
       <span className="eval-score">{label}</span>
+      <span className="eval-tag">mat.</span>
     </div>
   );
 }
@@ -67,7 +68,7 @@ export default function GameScreen({
   const puzzle = puzzles[puzzleIndex];
   const flipped = myColor === 'b';
   const isOnlineAR = mode === 'ar' && arOpponent === 'pvp-online';
-  const boardStyle = boardSize ? { maxWidth: `min(${boardSize}vw, 700px)` } : {};
+  // boardSize is applied via --board-size CSS variable set in App.jsx, no inline style needed
 
   return (
     <section className="panel gameplay-screen glass-panel">
@@ -174,7 +175,7 @@ export default function GameScreen({
       {mode !== 'puzzle' && <EvalBar balance={materialBalance || 0} />}
 
       {/* ── Board ── */}
-      <div className="board-container holographic" style={boardStyle}>
+      <div className="board-container holographic">
         {forfeitResult && (
           <div className="gameover-overlay">
             <div className="gameover-card glass-card">
